@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexa</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="d-flex justify-content-between align-items-center py-3">
+            <h1>Nexa</h1>
+            <div>
+                <span id="userGreeting"></span>
+                <button id="logoutButton" class="btn btn-primary ml-2">Log out</button>
+            </div>
+        </header>
+        <h2 class="mt-5">Today's Deals</h2>
+        <div class="row" id="product"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            if (window.location.pathname.endsWith('product.html')) {
+                const userGreeting = $('#userGreeting');
+                const logoutButton = $('#logoutButton');
+                const productList = $('#product');
+
+                const user = JSON.parse(localStorage.getItem('user'));
+
+
+                logoutButton.on('click', function () {
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('token');
+                    window.location.href = 'index.html';
+                });
+
+                function handleResponse(response) {
+                    appendProductCards(response.products);
+                }
+
+                function appendProductCards(products) {
+                    $.each(products, function (index, obj) {
+                        $('#product').append(`
+                            <div class="col-md-6 col-lg-4 gy-3">
+                                <div class="card h-100">
+                                    <div class="d-flex p-3">
+                                        <p class="lead">${obj.title}</p>
+                                    </div>
+                                    <img src="${obj.images[0]}" alt="${obj.title}" class="img-responsive"/>
+                                    <div class="card-body">
+                                        <p class="small">
+                                            <a href="#" class="text-muted">${obj.title}</a>
+                                        </p>
+                                        <p>${obj.description}</p>
+                                        <p>Price: $${obj.price}</p>
+                                        <p>Rating: ${obj.rating}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    });
+                }
+
+                $.ajax({
+                    url: 'https://dummyjson.com/products',
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    success: handleResponse,
+                    error: function (xhr, status, error) {
+                        console.error('Error', error);
+                        if (status === 'error') {
+                            if (JSON.parse(xhr.responseText).message === 'invalid signature') {
+                                logout();
+                            }
+                        }
+                    }
+                });
+
+                function logout() {
+                    localStorage.removeItem('user');
+                    localStorage.removeItem('token');
+                    window.location.href = 'index.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
